@@ -1,0 +1,1426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JavaBank | Digital Banking & Instant Payment WebApp</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome 6 Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .font-mono-code { font-family: 'JetBrains Mono', monospace; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.25s ease-out forwards; }
+        @media print {
+            body * { visibility: hidden; }
+            #printableReceipt, #printableReceipt * { visibility: visible; }
+            #printableReceipt { position: absolute; left: 0; top: 0; width: 100%; }
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 antialiased min-h-screen flex flex-col">
+
+    <!-- Top Navigation Header -->
+    <header class="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 shadow-xl">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
+            <!-- Brand -->
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="switchTab('dashboard')">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-rose-600 via-pink-600 to-amber-500 flex items-center justify-center text-white text-xl font-black shadow-lg shadow-rose-500/25">
+                    <i class="fa-solid fa-building-columns"></i>
+                </div>
+                <div>
+                    <div class="flex items-center space-x-2">
+                        <span class="font-extrabold text-2xl tracking-tight text-white">Java<span class="text-rose-500">Bank</span></span>
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30 uppercase tracking-wider">NeoPay</span>
+                    </div>
+                    <p class="text-[10px] text-slate-400 hidden sm:block">Core OOP Multi-Tier Banking Simulator</p>
+                </div>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav class="hidden md:flex items-center space-x-1">
+                <button onclick="switchTab('dashboard')" id="navBtnDashboard" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-rose-600 text-white transition flex items-center space-x-1.5 shadow-md shadow-rose-600/20">
+                    <i class="fa-solid fa-house"></i>
+                    <span>Dashboard</span>
+                </button>
+                <button onclick="switchTab('passbook')" id="navBtnPassbook" class="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-white transition flex items-center space-x-1.5">
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                    <span>Passbook & History</span>
+                </button>
+                <button onclick="switchTab('transfer')" id="navBtnTransfer" class="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-white transition flex items-center space-x-1.5">
+                    <i class="fa-solid fa-paper-plane"></i>
+                    <span>Send & Transfer</span>
+                </button>
+                <button onclick="switchTab('admin')" id="navBtnAdmin" class="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-white transition flex items-center space-x-1.5">
+                    <i class="fa-solid fa-vault"></i>
+                    <span>Treasury & Admin</span>
+                </button>
+            </nav>
+
+            <!-- Active Account Selector & Profile -->
+            <div class="flex items-center space-x-3">
+                <div class="relative">
+                    <select onchange="changeActiveAccount(this.value)" id="accountSelector" class="bg-slate-800 border border-slate-700 text-white text-xs font-bold rounded-xl px-3 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-rose-500 cursor-pointer appearance-none">
+                        <option value="ACC1001">ACC1001: Yash Raj Soni (Savings)</option>
+                        <option value="ACC1002">ACC1002: Tech Innovations Ltd (Current)</option>
+                    </select>
+                    <i class="fa-solid fa-chevron-down absolute right-3 top-3 text-[10px] text-slate-400 pointer-events-none"></i>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Notification Toast -->
+    <div id="toastAlert" class="hidden fixed bottom-6 right-6 z-50 bg-slate-900 border border-slate-700 text-white px-5 py-3.5 rounded-2xl shadow-2xl flex items-center space-x-3 text-xs sm:text-sm animate-fade-in">
+        <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400 text-base"></i>
+        <span id="toastMsg">Transaction completed successfully</span>
+    </div>
+
+    <!-- MAIN BODY -->
+    <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full space-y-8">
+
+        <!-- ========================================== -->
+        <!-- 1. DASHBOARD VIEW (Requirement #1 & #2)     -->
+        <!-- ========================================== -->
+        <section id="sectionDashboard" class="space-y-8 animate-fade-in">
+            <!-- Account Overview & Card Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Virtual Metallic Banking Card -->
+                <div class="lg:col-span-2 relative rounded-3xl p-6 sm:p-8 overflow-hidden shadow-2xl bg-gradient-to-br from-slate-900 via-rose-950/80 to-slate-900 border border-rose-500/30 flex flex-col justify-between min-h-[250px] group">
+                    <!-- Background ambient glow -->
+                    <div class="absolute -right-20 -bottom-20 w-64 h-64 bg-rose-600/20 rounded-full blur-3xl pointer-events-none group-hover:bg-rose-600/30 transition duration-700"></div>
+
+                    <!-- Top Card Row -->
+                    <div class="flex items-center justify-between z-10">
+                        <div class="flex items-center space-x-3">
+                            <span class="text-xs font-black uppercase tracking-widest text-rose-400">JavaBank Platinum</span>
+                            <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30 flex items-center">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5 animate-pulse"></span>
+                                <span id="cardStatusBadge">ACTIVE</span>
+                            </span>
+                        </div>
+                        <div class="flex items-center space-x-2 text-white/80">
+                            <i class="fa-solid fa-wifi text-base rotate-90"></i>
+                            <span class="font-bold text-lg tracking-wider text-rose-400">RUPAY</span>
+                        </div>
+                    </div>
+
+                    <!-- Balance Display with Eye Toggle (Requirement #2 Check Balance) -->
+                    <div class="my-6 z-10">
+                        <div class="flex items-center space-x-2 text-xs text-slate-400 mb-1">
+                            <span>Available Balance</span>
+                            <button onclick="toggleBalanceVisibility()" class="text-slate-400 hover:text-white transition text-xs">
+                                <i id="balanceEyeIcon" class="fa-solid fa-eye"></i>
+                            </button>
+                            <span class="text-[10px] text-slate-500 font-mono">(BigDecimal Scale: 2)</span>
+                        </div>
+                        <div class="flex items-baseline space-x-3">
+                            <div class="text-4xl sm:text-5xl font-black text-white tracking-tight" id="activeBalanceDisplay">
+                                ₹50,000.00
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bottom Card Row: Card Number, Name, Chip -->
+                    <div class="flex items-end justify-between z-10 pt-4 border-t border-white/10">
+                        <div>
+                            <div class="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Account Holder</div>
+                            <div class="font-bold text-white text-sm" id="cardHolderName">Yash Raj Soni</div>
+                            <div class="text-[11px] font-mono-code text-rose-300 mt-0.5" id="cardAccountMeta">ACC1001 • IFSC: JBANK000104</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-[10px] uppercase tracking-wider text-slate-400 font-bold">UPI Virtual ID</div>
+                            <div class="font-mono-code text-xs text-amber-300 font-semibold" id="cardUpiId">yashsoni@javabank</div>
+                            <div class="text-[10px] text-slate-400 mt-0.5">Exp: 12/29</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Account Limits & Quick Specs Card -->
+                <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 flex flex-col justify-between shadow-xl space-y-4">
+                    <div>
+                        <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+                            <span class="text-xs font-black uppercase text-slate-400">Account Specifications</span>
+                            <span class="text-xs font-bold text-rose-400" id="accountTypeBadge">Savings Account</span>
+                        </div>
+
+                        <div class="mt-4 space-y-3 text-xs">
+                            <div class="flex items-center justify-between">
+                                <span class="text-slate-400">Minimum Balance Rule:</span>
+                                <span class="font-bold text-white" id="minBalanceText">₹1,000.00</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-slate-400">Daily Withdrawal Cap:</span>
+                                <span class="font-bold text-amber-300" id="dailyLimitText">₹25,000.00</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-slate-400">Annual Interest Rate:</span>
+                                <span class="font-bold text-emerald-400" id="interestRateText">4.0% p.a.</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-slate-400">Failed PIN Attempts:</span>
+                                <span class="font-bold text-slate-300" id="failedPinsDisplay">0 / 3 (Locked on 3)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick QR Modal Trigger -->
+                    <button onclick="openReceiveQrModal()" class="w-full py-3 bg-slate-800 hover:bg-slate-700 text-rose-400 rounded-2xl text-xs font-bold transition flex items-center justify-center space-x-2 border border-slate-700">
+                        <i class="fa-solid fa-qrcode text-base"></i>
+                        <span>Show My UPI QR Code</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Quick Action Grid (Like Google Pay / PhonePe) -->
+            <div class="space-y-3">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-sm font-black uppercase tracking-wider text-slate-400">Instant Online Payment Actions</h3>
+                    <span class="text-xs text-rose-500 font-bold">Zero Transaction Fees</span>
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3">
+                    <!-- Send Money -->
+                    <div onclick="openTransferModal()" class="p-4 rounded-2xl bg-slate-900 border border-slate-800 hover:border-rose-500/50 cursor-pointer transition text-center group shadow-md">
+                        <div class="w-12 h-12 rounded-2xl bg-rose-600/20 text-rose-400 flex items-center justify-center text-xl mx-auto mb-2 group-hover:scale-110 transition">
+                            <i class="fa-solid fa-paper-plane"></i>
+                        </div>
+                        <div class="font-bold text-xs text-white">Transfer Funds</div>
+                        <div class="text-[10px] text-slate-400 mt-0.5">UPI / Account</div>
+                    </div>
+
+                    <!-- Cash Deposit -->
+                    <div onclick="openDepositModal()" class="p-4 rounded-2xl bg-slate-900 border border-slate-800 hover:border-emerald-500/50 cursor-pointer transition text-center group shadow-md">
+                        <div class="w-12 h-12 rounded-2xl bg-emerald-600/20 text-emerald-400 flex items-center justify-center text-xl mx-auto mb-2 group-hover:scale-110 transition">
+                            <i class="fa-solid fa-arrow-down-to-bracket"></i>
+                        </div>
+                        <div class="font-bold text-xs text-white">Deposit Cash</div>
+                        <div class="text-[10px] text-slate-400 mt-0.5">Instant Credit</div>
+                    </div>
+
+                    <!-- ATM Withdrawal -->
+                    <div onclick="openWithdrawModal()" class="p-4 rounded-2xl bg-slate-900 border border-slate-800 hover:border-amber-500/50 cursor-pointer transition text-center group shadow-md">
+                        <div class="w-12 h-12 rounded-2xl bg-amber-600/20 text-amber-400 flex items-center justify-center text-xl mx-auto mb-2 group-hover:scale-110 transition">
+                            <i class="fa-solid fa-money-bill-transfer"></i>
+                        </div>
+                        <div class="font-bold text-xs text-white">Withdraw Cash</div>
+                        <div class="text-[10px] text-slate-400 mt-0.5">ATM Simulator</div>
+                    </div>
+
+                    <!-- Check Balance -->
+                    <div onclick="openCheckBalancePinModal()" class="p-4 rounded-2xl bg-slate-900 border border-slate-800 hover:border-cyan-500/50 cursor-pointer transition text-center group shadow-md">
+                        <div class="w-12 h-12 rounded-2xl bg-cyan-600/20 text-cyan-400 flex items-center justify-center text-xl mx-auto mb-2 group-hover:scale-110 transition">
+                            <i class="fa-solid fa-shield-halved"></i>
+                        </div>
+                        <div class="font-bold text-xs text-white">Check Balance</div>
+                        <div class="text-[10px] text-slate-400 mt-0.5">Verify via PIN</div>
+                    </div>
+
+                    <!-- Passbook History -->
+                    <div onclick="switchTab('passbook')" class="p-4 rounded-2xl bg-slate-900 border border-slate-800 hover:border-purple-500/50 cursor-pointer transition text-center group shadow-md col-span-2 sm:col-span-1">
+                        <div class="w-12 h-12 rounded-2xl bg-purple-600/20 text-purple-400 flex items-center justify-center text-xl mx-auto mb-2 group-hover:scale-110 transition">
+                            <i class="fa-solid fa-receipt"></i>
+                        </div>
+                        <div class="font-bold text-xs text-white">View Passbook</div>
+                        <div class="text-[10px] text-slate-400 mt-0.5">Credits & Debits</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Transactions Table Preview -->
+            <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
+                <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+                    <div>
+                        <h4 class="font-bold text-white text-base">Recent Ledger Activity</h4>
+                        <p class="text-xs text-slate-400">Latest credit & debit transactions for this account</p>
+                    </div>
+                    <button onclick="switchTab('passbook')" class="text-xs font-bold text-rose-400 hover:text-rose-300 transition flex items-center space-x-1">
+                        <span>View All Transactions</span>
+                        <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                    </button>
+                </div>
+
+                <div id="dashboardRecentTxnsList" class="divide-y divide-slate-800">
+                    <!-- Injected via JS -->
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ========================================== -->
+        <!-- 2. PASSBOOK & TRANSACTION HISTORY (Req #2)  -->
+        <!-- ========================================== -->
+        <section id="sectionPassbook" class="hidden space-y-6 animate-fade-in max-w-5xl mx-auto">
+            <!-- Header with Deposit & Withdrawal Tab Filters (Requirement #2) -->
+            <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-2xl font-black text-white">Bank Passbook & Ledger Statement</h2>
+                        <p class="text-xs text-slate-400 mt-0.5" id="passbookAccountTitle">Showing activity for ACC1001 (Yash Raj Soni)</p>
+                    </div>
+                    <!-- Export / Print Statement Button -->
+                    <button onclick="window.print()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-bold transition flex items-center space-x-2 border border-slate-700 self-start sm:self-auto">
+                        <i class="fa-solid fa-print"></i>
+                        <span>Print Statement</span>
+                    </button>
+                </div>
+
+                <!-- History Filter Tabs: All, Deposit History, Withdrawal History -->
+                <div class="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-800">
+                    <button onclick="filterPassbook('ALL')" id="filterBtnAll" class="px-4 py-2 rounded-xl text-xs font-bold bg-rose-600 text-white transition">
+                        All Transactions (<span id="countAllTxn">0</span>)
+                    </button>
+                    <button onclick="filterPassbook('DEPOSIT')" id="filterBtnDeposit" class="px-4 py-2 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:text-white transition flex items-center space-x-1.5">
+                        <i class="fa-solid fa-arrow-down-left text-emerald-400"></i>
+                        <span>Deposit History (Money In)</span>
+                    </button>
+                    <button onclick="filterPassbook('WITHDRAWAL')" id="filterBtnWithdrawal" class="px-4 py-2 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:text-white transition flex items-center space-x-1.5">
+                        <i class="fa-solid fa-arrow-up-right text-rose-400"></i>
+                        <span>Withdrawal History (Money Out)</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Full Transaction Ledger List -->
+            <div id="fullPassbookList" class="space-y-3">
+                <!-- Injected via JS -->
+            </div>
+        </section>
+
+
+        <!-- ========================================== -->
+        <!-- 3. SEND & TRANSFER FUNDS VIEW (Req #2)     -->
+        <!-- ========================================== -->
+        <section id="sectionTransfer" class="hidden space-y-6 animate-fade-in max-w-2xl mx-auto">
+            <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
+                <div>
+                    <span class="text-[10px] font-black uppercase tracking-wider text-rose-400 bg-rose-500/10 px-2.5 py-0.5 rounded-full border border-rose-500/20">
+                        Instant Funds Transfer
+                    </span>
+                    <h2 class="text-2xl font-black text-white mt-2">Send Money / UPI Payment</h2>
+                    <p class="text-xs text-slate-400 mt-1">Two-Phase Atomic Funds Transfer guaranteed against system rollback.</p>
+                </div>
+
+                <!-- Sender Source Card -->
+                <div class="p-4 bg-slate-950 rounded-2xl border border-slate-800 flex items-center justify-between text-xs">
+                    <div>
+                        <div class="text-[10px] uppercase font-bold text-slate-400">Debiting Account</div>
+                        <div class="font-bold text-white text-sm" id="transferSenderName">Yash Raj Soni</div>
+                        <div class="text-slate-500 font-mono-code" id="transferSenderAcc">ACC1001 (Savings)</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-[10px] uppercase font-bold text-slate-400">Available</div>
+                        <div class="font-bold text-emerald-400 text-sm" id="transferSenderBal">₹50,000.00</div>
+                    </div>
+                </div>
+
+                <!-- Transfer Method Picker: UPI vs Account Number -->
+                <div class="space-y-3 text-xs">
+                    <label class="block font-bold text-slate-300 uppercase">Transfer Method</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <label class="flex items-center space-x-2 border border-slate-800 p-3 rounded-2xl cursor-pointer hover:border-rose-500 transition has-[:checked]:bg-rose-950/30 has-[:checked]:border-rose-500">
+                            <input type="radio" name="transferMethod" value="UPI" checked class="text-rose-600 focus:ring-rose-500" onchange="toggleTransferInputType()" />
+                            <div>
+                                <div class="font-bold text-white"><i class="fa-solid fa-mobile-screen mr-1 text-rose-400"></i> UPI Virtual ID</div>
+                                <div class="text-[10px] text-slate-400">Instant 24x7 UPI</div>
+                            </div>
+                        </label>
+                        <label class="flex items-center space-x-2 border border-slate-800 p-3 rounded-2xl cursor-pointer hover:border-rose-500 transition has-[:checked]:bg-rose-950/30 has-[:checked]:border-rose-500">
+                            <input type="radio" name="transferMethod" value="ACCOUNT" class="text-rose-600 focus:ring-rose-500" onchange="toggleTransferInputType()" />
+                            <div>
+                                <div class="font-bold text-white"><i class="fa-solid fa-building-columns mr-1 text-cyan-400"></i> Account + IFSC</div>
+                                <div class="text-[10px] text-slate-400">IMPS / NEFT</div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Beneficiary Input / Quick Beneficiary Chips -->
+                <div class="space-y-3 text-xs">
+                    <label class="block font-bold text-slate-300 uppercase" id="beneficiaryInputLabel">Beneficiary UPI ID *</label>
+                    <input
+                        type="text"
+                        id="transferBeneficiaryInput"
+                        placeholder="e.g. aarav@javabank or ACC1002"
+                        class="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-2xl text-white font-mono-code text-sm focus:outline-none focus:ring-2 focus:ring-rose-500"
+                    />
+
+                    <!-- Quick Beneficiary Chips -->
+                    <div class="flex flex-wrap items-center gap-1.5 pt-1">
+                        <span class="text-[10px] text-slate-500 mr-1">Quick Select:</span>
+                        <button type="button" onclick="setQuickRecipient('techcorp@javabank')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-[10px] font-bold">
+                            Tech Innovations (Current)
+                        </button>
+                        <button type="button" onclick="setQuickRecipient('aarav@javabank')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-[10px] font-bold">
+                            Aarav Sharma
+                        </button>
+                        <button type="button" onclick="setQuickRecipient('priya@javabank')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-[10px] font-bold">
+                            Dr. Priya Sharma
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Amount Input & Fast Chips -->
+                <div class="space-y-3 text-xs">
+                    <label class="block font-bold text-slate-300 uppercase">Transfer Amount (₹) *</label>
+                    <div class="relative">
+                        <span class="absolute left-4 top-3.5 text-slate-400 font-bold text-lg">₹</span>
+                        <input
+                            type="number"
+                            id="transferAmountInput"
+                            min="1"
+                            step="0.01"
+                            placeholder="0.00"
+                            class="w-full pl-9 pr-4 py-3 bg-slate-950 border border-slate-800 rounded-2xl text-white font-black text-xl focus:outline-none focus:ring-2 focus:ring-rose-500"
+                        />
+                    </div>
+                    <!-- Fast Amount Chips -->
+                    <div class="flex items-center gap-2">
+                        <button type="button" onclick="addTransferAmount(500)" class="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-lg text-xs">+₹500</button>
+                        <button type="button" onclick="addTransferAmount(1000)" class="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-lg text-xs">+₹1,000</button>
+                        <button type="button" onclick="addTransferAmount(2000)" class="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-lg text-xs">+₹2,000</button>
+                        <button type="button" onclick="addTransferAmount(5000)" class="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-lg text-xs">+₹5,000</button>
+                    </div>
+                </div>
+
+                <!-- Note / Remarks -->
+                <div class="space-y-1 text-xs">
+                    <label class="block font-bold text-slate-300 uppercase">Payment Note / Reference</label>
+                    <input
+                        type="text"
+                        id="transferRemarksInput"
+                        placeholder="e.g. Project consultation payment, invoice split"
+                        class="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-300 text-xs focus:outline-none focus:ring-2 focus:ring-rose-500"
+                    />
+                </div>
+
+                <!-- Initiate Button -->
+                <button
+                    onclick="promptTransferPin()"
+                    class="w-full py-3.5 bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white rounded-2xl font-bold text-sm shadow-xl shadow-rose-600/30 transition flex items-center justify-center space-x-2"
+                >
+                    <i class="fa-solid fa-lock text-xs"></i>
+                    <span>Authorize & Send via UPI PIN</span>
+                </button>
+            </div>
+        </section>
+
+
+        <!-- ========================================== -->
+        <!-- 4. TREASURY & ADMIN ANALYTICS VIEW         -->
+        <!-- ========================================== -->
+        <section id="sectionAdmin" class="hidden space-y-6 animate-fade-in max-w-5xl mx-auto">
+            <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <span class="text-[10px] font-black uppercase tracking-wider text-violet-400 bg-violet-500/10 px-2.5 py-0.5 rounded-full border border-violet-500/20">
+                            Bank Central Switch
+                        </span>
+                        <h2 class="text-2xl font-black text-white mt-2">JavaBank Central Treasury & Liquidity</h2>
+                        <p class="text-xs text-slate-400 mt-1">Monetary reserve auditing, monthly interest compounding, and security unfreeze controls.</p>
+                    </div>
+                    <button onclick="calculateAndApplyMonthlyInterest()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs transition shadow-md shadow-emerald-600/20 flex items-center space-x-1.5 self-start sm:self-auto">
+                        <i class="fa-solid fa-percent"></i>
+                        <span>Apply Monthly 4% Interest</span>
+                    </button>
+                </div>
+
+                <!-- Liquidity Metrics Grid -->
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-slate-950 border border-slate-800 p-4 rounded-2xl">
+                        <div class="text-[10px] uppercase font-bold text-slate-400 mb-1">Total System Deposits</div>
+                        <div class="text-2xl font-black text-white" id="treasuryTotalDeposits">₹60,000.00</div>
+                        <div class="text-[10px] text-emerald-400 mt-1">100% Reserve Backed</div>
+                    </div>
+                    <div class="bg-slate-950 border border-slate-800 p-4 rounded-2xl">
+                        <div class="text-[10px] uppercase font-bold text-slate-400 mb-1">Total Transaction Volume</div>
+                        <div class="text-2xl font-black text-rose-400" id="treasuryTxnCount">14 Ops</div>
+                        <div class="text-[10px] text-slate-400 mt-1">Zero Race Conditions</div>
+                    </div>
+                    <div class="bg-slate-950 border border-slate-800 p-4 rounded-2xl">
+                        <div class="text-[10px] uppercase font-bold text-slate-400 mb-1">Savings Liquidity Ratio</div>
+                        <div class="text-2xl font-black text-amber-300" id="treasurySavingsRatio">83.3%</div>
+                        <div class="text-[10px] text-slate-400 mt-1">₹50,000.00 / ₹60,000.00</div>
+                    </div>
+                    <div class="bg-slate-950 border border-slate-800 p-4 rounded-2xl">
+                        <div class="text-[10px] uppercase font-bold text-slate-400 mb-1">Overdraft Credit Limit</div>
+                        <div class="text-2xl font-black text-cyan-400">₹10,000.00</div>
+                        <div class="text-[10px] text-slate-400 mt-1">Approved for ACC1002</div>
+                    </div>
+                </div>
+
+                <!-- Account Security & Unfreeze Manager -->
+                <div class="pt-4 border-t border-slate-800 space-y-3">
+                    <h4 class="font-bold text-white text-sm">Security Pin Lockout & Account Unfreeze Manager</h4>
+                    <p class="text-xs text-slate-400">If a customer enters 3 consecutive wrong PINs, their account freezes. The bank manager can review and unlock accounts here.</p>
+
+                    <div class="space-y-2 text-xs" id="adminAccountStatusList">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+
+    <!-- ========================================== -->
+    <!-- MODALS SECTION                              -->
+    <!-- ========================================== -->
+
+    <!-- 1. Cash Deposit Modal (Requirement #2) -->
+    <div id="depositModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 sm:p-8 animate-fade-in shadow-2xl space-y-4">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+                <div class="flex items-center space-x-2">
+                    <div class="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
+                        <i class="fa-solid fa-arrow-down-to-bracket"></i>
+                    </div>
+                    <h3 class="text-base font-black text-white">Deposit Cash / Add Funds</h3>
+                </div>
+                <button onclick="closeDepositModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div class="space-y-3 text-xs">
+                <div>
+                    <span class="text-slate-400 block">Target Account:</span>
+                    <strong class="text-white text-sm" id="depositTargetAccLabel">ACC1001 (Yash Raj Soni)</strong>
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-300 uppercase mb-1">Deposit Amount (₹) *</label>
+                    <div class="relative">
+                        <span class="absolute left-3.5 top-2.5 text-slate-400 font-bold text-base">₹</span>
+                        <input
+                            type="number"
+                            id="depositAmountInput"
+                            min="100"
+                            step="100"
+                            placeholder="5000"
+                            class="w-full pl-8 pr-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white font-black text-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        />
+                    </div>
+                    <div class="flex items-center gap-2 mt-2">
+                        <button type="button" onclick="setDepositAmount(2000)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-lg text-xs">+₹2,000</button>
+                        <button type="button" onclick="setDepositAmount(5000)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-lg text-xs">+₹5,000</button>
+                        <button type="button" onclick="setDepositAmount(10000)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-lg text-xs">+₹10,000</button>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-300 uppercase mb-1">Deposit Channel</label>
+                    <select id="depositChannelSelect" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white font-semibold">
+                        <option>Cash Deposit Machine (CDM Branch)</option>
+                        <option>Direct UPI / NetBanking Gateway</option>
+                        <option>Cheque Clearing</option>
+                    </select>
+                </div>
+
+                <div class="pt-2 flex items-center justify-end space-x-2">
+                    <button onclick="closeDepositModal()" class="px-4 py-2 text-slate-400 hover:text-white font-bold">Cancel</button>
+                    <button onclick="executeDeposit()" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-lg shadow-emerald-600/20">
+                        Confirm Deposit
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- 2. Cash Withdrawal Modal (Requirement #2) -->
+    <div id="withdrawModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 sm:p-8 animate-fade-in shadow-2xl space-y-4">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+                <div class="flex items-center space-x-2">
+                    <div class="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold">
+                        <i class="fa-solid fa-money-bill-transfer"></i>
+                    </div>
+                    <h3 class="text-base font-black text-white">ATM Cash Withdrawal</h3>
+                </div>
+                <button onclick="closeWithdrawModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div class="space-y-3 text-xs">
+                <div class="p-3 bg-slate-950 rounded-xl border border-slate-800 flex justify-between">
+                    <div>
+                        <span class="text-slate-400 block text-[10px]">Source Account</span>
+                        <strong class="text-white text-xs" id="withdrawSourceAccLabel">ACC1001 (Savings)</strong>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-slate-400 block text-[10px]">Available Funds</span>
+                        <strong class="text-emerald-400 text-xs" id="withdrawAvailableBal">₹50,000.00</strong>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-300 uppercase mb-1">Withdrawal Amount (₹) *</label>
+                    <div class="relative">
+                        <span class="absolute left-3.5 top-2.5 text-slate-400 font-bold text-base">₹</span>
+                        <input
+                            type="number"
+                            id="withdrawAmountInput"
+                            min="100"
+                            max="25000"
+                            step="100"
+                            placeholder="2000"
+                            class="w-full pl-8 pr-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white font-black text-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                        />
+                    </div>
+                    <p class="text-[10px] text-slate-500 mt-1">Daily Cap: ₹25,000.00 (Savings) • Min Bal ₹1,000 required.</p>
+                </div>
+
+                <!-- 4-Digit Security PIN Prompt -->
+                <div>
+                    <label class="block font-bold text-slate-300 uppercase mb-1">Enter 4-Digit ATM PIN *</label>
+                    <input
+                        type="password"
+                        id="withdrawPinInput"
+                        maxlength="4"
+                        placeholder="••••"
+                        class="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white font-mono-code text-center tracking-widest text-lg font-bold focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    />
+                    <div class="text-[10px] text-slate-500 mt-1 text-center">Demo PIN: <strong>1234</strong> (Savings) or <strong>9999</strong> (Current)</div>
+                </div>
+
+                <div class="pt-2 flex items-center justify-end space-x-2">
+                    <button onclick="closeWithdrawModal()" class="px-4 py-2 text-slate-400 hover:text-white font-bold">Cancel</button>
+                    <button onclick="executeWithdrawal()" class="px-5 py-2.5 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-xl shadow-lg shadow-amber-600/20">
+                        Dispense Cash
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- 3. Security PIN Verification Modal for Transfers & Balance Check -->
+    <div id="pinModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-sm w-full p-6 sm:p-8 animate-fade-in shadow-2xl text-center space-y-4">
+            <div class="w-12 h-12 rounded-2xl bg-rose-600/20 text-rose-500 flex items-center justify-center text-xl mx-auto">
+                <i class="fa-solid fa-shield-halved"></i>
+            </div>
+            <div>
+                <h3 class="text-base font-black text-white" id="pinModalTitle">Enter Security PIN</h3>
+                <p class="text-xs text-slate-400 mt-1" id="pinModalSub">Authorizing payment from ACC1001</p>
+            </div>
+
+            <div>
+                <input
+                    type="password"
+                    id="securityPinInput"
+                    maxlength="4"
+                    autofocus
+                    placeholder="••••"
+                    class="w-48 mx-auto px-4 py-3 bg-slate-950 border border-slate-700 rounded-2xl text-white font-mono-code text-center tracking-widest text-2xl font-black focus:outline-none focus:ring-2 focus:ring-rose-500"
+                />
+                <div class="text-[10px] text-slate-400 mt-2">
+                    Security Rule: 3 failed attempts will freeze your account.
+                </div>
+            </div>
+
+            <div class="flex items-center justify-center space-x-2 pt-2">
+                <button onclick="closePinModal()" class="px-4 py-2 text-xs font-bold text-slate-400 hover:text-white">Cancel</button>
+                <button onclick="validateAndExecutePinAction()" class="px-5 py-2.5 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-rose-600/25">
+                    Submit PIN
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- 4. Official Transaction Receipt Advice Modal (Requirement #2 & #3) -->
+    <div id="receiptModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 sm:p-8 animate-fade-in shadow-2xl space-y-4">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-file-invoice text-rose-500 text-lg"></i>
+                    <h3 class="text-base font-black text-white">Official Bank Payment Advice</h3>
+                </div>
+                <button onclick="closeReceiptModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <!-- Printable Receipt Area -->
+            <div id="printableReceipt" class="p-6 bg-slate-950 border border-slate-800 rounded-2xl text-xs space-y-4 text-slate-200">
+                <!-- Header -->
+                <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+                    <div>
+                        <div class="text-lg font-black text-white">JavaBank NeoPay</div>
+                        <div class="text-[10px] text-slate-400">Scheduled Commercial Bank • RBI License: JB-8921</div>
+                        <div class="text-[10px] font-mono-code text-slate-500 mt-0.5">Switch: Core-OOP-Switch-v17</div>
+                    </div>
+                    <div class="text-right">
+                        <span class="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 font-black text-[10px] uppercase border border-emerald-500/30">SUCCESSFUL</span>
+                        <div class="text-[10px] text-slate-400 mt-1 font-mono-code" id="receiptTimestamp">2026-11-12 17:10:00</div>
+                    </div>
+                </div>
+
+                <!-- Transaction Details Grid -->
+                <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-slate-400">Transaction Reference (UTR):</span>
+                        <strong class="font-mono-code text-rose-400" id="receiptUtr">UTR-JBANK-849102</strong>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-slate-400">Transaction Type:</span>
+                        <strong class="text-white" id="receiptType">UPI Funds Transfer</strong>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-slate-400">From Account:</span>
+                        <span class="font-mono-code text-slate-300" id="receiptFrom">ACC1001 (Yash Raj Soni)</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-slate-400">To Beneficiary / Channel:</span>
+                        <span class="font-mono-code text-slate-300" id="receiptTo">techcorp@javabank</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-slate-400">Description / Remarks:</span>
+                        <span class="text-slate-300" id="receiptDesc">Consulting fees</span>
+                    </div>
+                </div>
+
+                <!-- Financial Sum -->
+                <div class="p-4 bg-rose-950/20 border border-rose-500/30 rounded-xl flex items-center justify-between text-base font-black">
+                    <span class="text-white">Amount Transacted:</span>
+                    <span class="text-2xl text-rose-400" id="receiptAmount">₹5,000.00</span>
+                </div>
+
+                <!-- Footer Signatory & QR -->
+                <div class="flex items-center justify-between pt-3 border-t border-slate-800 text-[10px] text-slate-400">
+                    <div>
+                        <div>Authorized Cryptographic Stamp: <strong class="text-slate-200">SHA-256 Validated</strong></div>
+                        <div>Non-repudiable financial ledger transaction.</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="w-14 h-14 bg-white p-1 rounded-lg inline-block">
+                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=https://javabank.simulator/txn/verify" alt="QR" class="w-full h-full">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="pt-2 flex items-center justify-end space-x-2">
+                <button onclick="closeReceiptModal()" class="px-4 py-2 text-xs font-bold text-slate-400 hover:text-white">Close</button>
+                <button onclick="window.print()" class="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-rose-600/25 flex items-center space-x-1.5">
+                    <i class="fa-solid fa-print"></i>
+                    <span>Print Receipt</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- 5. Receive UPI QR Modal -->
+    <div id="receiveQrModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-sm w-full p-6 text-center animate-fade-in shadow-2xl space-y-4">
+            <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+                <span class="text-xs font-black uppercase text-slate-400">Receive Money</span>
+                <button onclick="closeReceiveQrModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div>
+                <h4 class="font-bold text-white text-base" id="qrAccHolderName">Yash Raj Soni</h4>
+                <div class="text-xs font-mono-code text-rose-400 font-semibold" id="qrAccUpiId">yashsoni@javabank</div>
+            </div>
+            <div class="p-4 bg-white rounded-2xl w-52 h-52 mx-auto flex items-center justify-center shadow-inner">
+                <img id="upiQrImage" src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=yashsoni@javabank&pn=Yash%20Raj%20Soni&cu=INR" alt="UPI QR" class="w-full h-full object-contain">
+            </div>
+            <p class="text-[11px] text-slate-400">Scan with any UPI app (GPay, PhonePe, Paytm, BHIM) to pay directly into ACC1001.</p>
+        </div>
+    </div>
+
+
+    <!-- Footer -->
+    <footer class="bg-slate-950 text-slate-500 text-xs py-8 border-t border-slate-900 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div>
+                <strong class="text-slate-300">JavaBank Core OOP Simulator</strong> — Developed by Yash Raj Soni (BCA 3rd Sem)
+            </div>
+            <div class="flex flex-wrap items-center space-x-3 text-slate-500">
+                <span>Java 17 LTS</span>
+                <span>•</span>
+                <span>BigDecimal Currency</span>
+                <span>•</span>
+                <span>Two-Phase Atomic Commit</span>
+                <span>•</span>
+                <span>Tailwind CSS</span>
+            </div>
+        </div>
+    </footer>
+
+
+    <!-- ========================================== -->
+    <!-- MASTER BANKING & PAYMENT ENGINE JAVASCRIPT -->
+    <!-- ========================================== -->
+    <script>
+        // --- CORE OBJECT-ORIENTED BANKING MODELS ---
+        // Mirroring Java: SavingsAccount vs CurrentAccount with BigDecimal arithmetic
+        class BankAccount {
+            constructor(accNo, holder, type, initialBal, pin, upiId) {
+                this.accountNumber = accNo;
+                this.holderName = holder;
+                this.type = type; // "SAVINGS" or "CURRENT"
+                this.balance = initialBal;
+                this.pin = pin;
+                this.upiId = upiId;
+                this.status = "ACTIVE"; // "ACTIVE" or "LOCKED"
+                this.failedPinAttempts = 0;
+                this.dailyWithdrawnToday = 0;
+                this.minBalance = type === "SAVINGS" ? 1000.00 : 0.00;
+                this.dailyLimit = type === "SAVINGS" ? 25000.00 : 100000.00;
+                this.overdraftCap = type === "CURRENT" ? 10000.00 : 0.00;
+                this.annualInterestRate = type === "SAVINGS" ? 0.04 : 0.00;
+                this.transactions = [];
+            }
+
+            deposit(amount, desc = "Cash Deposit", channel = "CDM") {
+                if (amount <= 0) throw new Error("Deposit amount must be strictly positive.");
+                this.balance += amount;
+                const txn = {
+                    id: "TXN-" + Math.random().toString(36).substring(2, 8).toUpperCase(),
+                    utr: "UTR-JBANK-" + Math.floor(Math.random() * 900000 + 100000),
+                    type: "DEPOSIT",
+                    amount: amount,
+                    channel: channel,
+                    desc: desc,
+                    beneficiary: "Self (Credit)",
+                    closingBalance: this.balance,
+                    timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19)
+                };
+                this.transactions.unshift(txn);
+                return txn;
+            }
+
+            withdraw(amount, enteredPin, desc = "ATM Cash Withdrawal") {
+                if (this.status === "LOCKED") {
+                    throw new Error("ACCOUNT_FROZEN_EXCEPTION: Account is locked due to security policy.");
+                }
+                if (enteredPin !== this.pin) {
+                    this.failedPinAttempts++;
+                    if (this.failedPinAttempts >= 3) {
+                        this.status = "LOCKED";
+                        throw new Error("SECURITY_ALERT: 3 failed PIN attempts! Account has been FROZEN.");
+                    }
+                    throw new Error(`INVALID_PIN_EXCEPTION: Wrong PIN! Attempt ${this.failedPinAttempts} of 3.`);
+                }
+                this.failedPinAttempts = 0;
+
+                // Daily limit check
+                if (this.dailyWithdrawnToday + amount > this.dailyLimit) {
+                    throw new Error(`DAILY_LIMIT_EXCEEDED: Daily cap of ₹${this.dailyLimit.toLocaleString()} exceeded.`);
+                }
+
+                // Balance + Overdraft check
+                const availableFunds = this.balance + this.overdraftCap;
+                if (this.balance - amount < this.minBalance && this.type === "SAVINGS") {
+                    throw new Error(`INSUFFICIENT_BALANCE: Minimum balance of ₹${this.minBalance.toFixed(2)} must be maintained.`);
+                }
+                if (amount > availableFunds) {
+                    throw new Error(`INSUFFICIENT_BALANCE: Attempted ₹${amount.toFixed(2)}, Available: ₹${availableFunds.toFixed(2)}`);
+                }
+
+                this.balance -= amount;
+                this.dailyWithdrawnToday += amount;
+                const txn = {
+                    id: "TXN-" + Math.random().toString(36).substring(2, 8).toUpperCase(),
+                    utr: "UTR-JBANK-" + Math.floor(Math.random() * 900000 + 100000),
+                    type: "WITHDRAWAL",
+                    amount: amount,
+                    channel: "ATM Cash",
+                    desc: desc,
+                    beneficiary: "Self (Cash Out)",
+                    closingBalance: this.balance,
+                    timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19)
+                };
+                this.transactions.unshift(txn);
+                return txn;
+            }
+
+            transfer(amount, targetAccOrUpi, enteredPin, remarks = "Funds Transfer") {
+                if (this.status === "LOCKED") {
+                    throw new Error("ACCOUNT_FROZEN_EXCEPTION: Account is locked due to security policy.");
+                }
+                if (enteredPin !== this.pin) {
+                    this.failedPinAttempts++;
+                    if (this.failedPinAttempts >= 3) {
+                        this.status = "LOCKED";
+                        throw new Error("SECURITY_ALERT: 3 failed PIN attempts! Account has been FROZEN.");
+                    }
+                    throw new Error(`INVALID_PIN_EXCEPTION: Wrong PIN! Attempt ${this.failedPinAttempts} of 3.`);
+                }
+                this.failedPinAttempts = 0;
+
+                const availableFunds = this.balance + this.overdraftCap;
+                if (this.balance - amount < this.minBalance && this.type === "SAVINGS") {
+                    throw new Error(`INSUFFICIENT_BALANCE: Transfer exceeds permitted balance. Min balance: ₹${this.minBalance.toFixed(2)}.`);
+                }
+                if (amount > availableFunds) {
+                    throw new Error(`INSUFFICIENT_BALANCE: Available: ₹${availableFunds.toFixed(2)}`);
+                }
+
+                // Two-Phase Atomic Debit
+                this.balance -= amount;
+                const utr = "UTR-JBANK-" + Math.floor(Math.random() * 900000 + 100000);
+                const txn = {
+                    id: "TXN-" + Math.random().toString(36).substring(2, 8).toUpperCase(),
+                    utr: utr,
+                    type: "WITHDRAWAL",
+                    amount: amount,
+                    channel: "UPI / Transfer",
+                    desc: remarks || "Funds Transfer",
+                    beneficiary: targetAccOrUpi,
+                    closingBalance: this.balance,
+                    timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19)
+                };
+                this.transactions.unshift(txn);
+
+                // If internal account, credit atomically
+                const recipient = Object.values(BANK_ACCOUNTS).find(a => a.accountNumber === targetAccOrUpi || a.upiId === targetAccOrUpi);
+                if (recipient) {
+                    recipient.balance += amount;
+                    recipient.transactions.unshift({
+                        id: "TXN-" + Math.random().toString(36).substring(2, 8).toUpperCase(),
+                        utr: utr,
+                        type: "DEPOSIT",
+                        amount: amount,
+                        channel: "UPI Receive",
+                        desc: `Received from ${this.holderName} (${this.accountNumber})`,
+                        beneficiary: `From ${this.holderName}`,
+                        closingBalance: recipient.balance,
+                        timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19)
+                    });
+                }
+
+                return txn;
+            }
+        }
+
+        // --- SEED BANK ACCOUNTS (JavaBank Accounts Roster) ---
+        const BANK_ACCOUNTS = {
+            "ACC1001": new BankAccount("ACC1001", "Yash Raj Soni", "SAVINGS", 50000.00, "1234", "yashsoni@javabank"),
+            "ACC1002": new BankAccount("ACC1002", "Tech Innovations Ltd", "CURRENT", 10000.00, "9999", "techcorp@javabank")
+        };
+
+        // Seed initial transaction history
+        BANK_ACCOUNTS["ACC1001"].transactions.push(
+            { id: "TXN-88A901", utr: "UTR-JBANK-918201", type: "DEPOSIT", amount: 20000.00, channel: "Salary Credit", desc: "Monthly Internship Honorarium", beneficiary: "Techcorp HR", closingBalance: 50000.00, timestamp: "2026-11-10 10:15:22" },
+            { id: "TXN-77B214", utr: "UTR-JBANK-652910", type: "WITHDRAWAL", amount: 3500.00, channel: "UPI Payment", desc: "Hostel Books & Software License", beneficiary: "Academic Book House", closingBalance: 30000.00, timestamp: "2026-11-08 16:42:09" },
+            { id: "TXN-66C109", utr: "UTR-JBANK-410982", type: "DEPOSIT", amount: 15000.00, channel: "CDM Branch", desc: "Cash Deposit at Hazratganj Branch", beneficiary: "Self", closingBalance: 33500.00, timestamp: "2026-11-05 11:30:00" },
+            { id: "TXN-55D402", utr: "UTR-JBANK-119283", type: "WITHDRAWAL", amount: 2000.00, channel: "ATM Cash", desc: "Hazratganj ATM Cash Dispense", beneficiary: "Self", closingBalance: 18500.00, timestamp: "2026-11-02 19:12:44" }
+        );
+
+        BANK_ACCOUNTS["ACC1002"].transactions.push(
+            { id: "TXN-99X101", utr: "UTR-JBANK-882910", type: "DEPOSIT", amount: 50000.00, channel: "NEFT Credit", desc: "Corporate Client Retainer", beneficiary: "Apex Corp Ltd", closingBalance: 10000.00, timestamp: "2026-11-11 14:00:00" }
+        );
+
+        // Active State
+        let activeAccount = BANK_ACCOUNTS["ACC1001"];
+        let isBalanceHidden = false;
+        let passbookFilter = "ALL";
+        let pendingPinAction = null; // 'TRANSFER' or 'CHECK_BALANCE'
+
+        // --- UI REFRESH & RENDER ---
+        function refreshUI() {
+            // Update Card & Specs
+            document.getElementById("cardStatusBadge").innerText = activeAccount.status;
+            document.getElementById("cardStatusBadge").className = activeAccount.status === "ACTIVE"
+                ? "text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30 flex items-center"
+                : "text-[10px] px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 font-bold border border-rose-500/30 flex items-center";
+
+            document.getElementById("cardHolderName").innerText = activeAccount.holderName;
+            document.getElementById("cardAccountMeta").innerText = `${activeAccount.accountNumber} • IFSC: JBANK000104`;
+            document.getElementById("cardUpiId").innerText = activeAccount.upiId;
+
+            // Balance
+            if (isBalanceHidden) {
+                document.getElementById("activeBalanceDisplay").innerText = "••••••••";
+            } else {
+                document.getElementById("activeBalanceDisplay").innerText = `₹${activeAccount.balance.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            }
+
+            // Specs
+            document.getElementById("accountTypeBadge").innerText = activeAccount.type === "SAVINGS" ? "Savings Account" : "Current Account";
+            document.getElementById("minBalanceText").innerText = `₹${activeAccount.minBalance.toFixed(2)}`;
+            document.getElementById("dailyLimitText").innerText = `₹${activeAccount.dailyLimit.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+            document.getElementById("interestRateText").innerText = `${(activeAccount.annualInterestRate * 100).toFixed(1)}% p.a.`;
+            document.getElementById("failedPinsDisplay").innerText = `${activeAccount.failedPinAttempts} / 3 (${activeAccount.status})`;
+
+            // Modal Labels
+            document.getElementById("depositTargetAccLabel").innerText = `${activeAccount.accountNumber} (${activeAccount.holderName})`;
+            document.getElementById("withdrawSourceAccLabel").innerText = `${activeAccount.accountNumber} (${activeAccount.type})`;
+            document.getElementById("withdrawAvailableBal").innerText = `₹${activeAccount.balance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+
+            document.getElementById("transferSenderName").innerText = activeAccount.holderName;
+            document.getElementById("transferSenderAcc").innerText = `${activeAccount.accountNumber} (${activeAccount.type})`;
+            document.getElementById("transferSenderBal").innerText = `₹${activeAccount.balance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+
+            // QR Modal
+            document.getElementById("qrAccHolderName").innerText = activeAccount.holderName;
+            document.getElementById("qrAccUpiId").innerText = activeAccount.upiId;
+            document.getElementById("upiQrImage").src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=${activeAccount.upiId}&pn=${encodeURIComponent(activeAccount.holderName)}&cu=INR`;
+
+            renderDashboardRecentTxns();
+            renderPassbook();
+            renderTreasuryStats();
+        }
+
+        function toggleBalanceVisibility() {
+            isBalanceHidden = !isBalanceHidden;
+            document.getElementById("balanceEyeIcon").className = isBalanceHidden ? "fa-solid fa-eye-slash" : "fa-solid fa-eye";
+            refreshUI();
+        }
+
+        function changeActiveAccount(accNo) {
+            if (BANK_ACCOUNTS[accNo]) {
+                activeAccount = BANK_ACCOUNTS[accNo];
+                showToast(`Switched active account to ${activeAccount.accountNumber} (${activeAccount.holderName})`, "info");
+                refreshUI();
+            }
+        }
+
+        // --- DASHBOARD RECENT TRANSACTIONS ---
+        function renderDashboardRecentTxns() {
+            const list = document.getElementById("dashboardRecentTxnsList");
+            list.innerHTML = "";
+
+            const recents = activeAccount.transactions.slice(0, 4);
+            if (recents.length === 0) {
+                list.innerHTML = `<div class="py-6 text-center text-xs text-slate-500">No transactions recorded yet.</div>`;
+                return;
+            }
+
+            recents.forEach(t => {
+                const isDeposit = t.type === "DEPOSIT";
+                const row = document.createElement("div");
+                row.className = "py-3 flex items-center justify-between text-xs hover:bg-slate-800/40 px-2 rounded-xl transition cursor-pointer";
+                row.onclick = () => openReceiptModal(t);
+                row.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <div class="w-9 h-9 rounded-xl flex items-center justify-center font-bold ${isDeposit ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}">
+                            <i class="fa-solid ${isDeposit ? 'fa-arrow-down-left' : 'fa-arrow-up-right'}"></i>
+                        </div>
+                        <div>
+                            <div class="font-bold text-white">${t.desc}</div>
+                            <div class="text-[10px] text-slate-400 font-mono-code">${t.timestamp} • ${t.channel}</div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="font-black ${isDeposit ? 'text-emerald-400' : 'text-rose-400'}">
+                            ${isDeposit ? '+' : '-'}₹${t.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                        </div>
+                        <div class="text-[10px] text-slate-500 font-mono-code">Bal: ₹${t.closingBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</div>
+                    </div>
+                `;
+                list.appendChild(row);
+            });
+        }
+
+        // --- PASSBOOK & HISTORY (Requirement #2: Deposit vs Withdrawal History) ---
+        function filterPassbook(filter) {
+            passbookFilter = filter;
+            const defBtn = "px-4 py-2 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:text-white transition";
+            const actBtn = "px-4 py-2 rounded-xl text-xs font-bold bg-rose-600 text-white transition";
+
+            document.getElementById("filterBtnAll").className = filter === 'ALL' ? actBtn : defBtn;
+            document.getElementById("filterBtnDeposit").className = filter === 'DEPOSIT' ? actBtn : defBtn;
+            document.getElementById("filterBtnWithdrawal").className = filter === 'WITHDRAWAL' ? actBtn : defBtn;
+
+            renderPassbook();
+        }
+
+        function renderPassbook() {
+            document.getElementById("passbookAccountTitle").innerText = `Showing activity for ${activeAccount.accountNumber} (${activeAccount.holderName})`;
+            document.getElementById("countAllTxn").innerText = activeAccount.transactions.length;
+
+            const list = document.getElementById("fullPassbookList");
+            list.innerHTML = "";
+
+            let filtered = activeAccount.transactions;
+            if (passbookFilter === "DEPOSIT") {
+                filtered = activeAccount.transactions.filter(t => t.type === "DEPOSIT");
+            } else if (passbookFilter === "WITHDRAWAL") {
+                filtered = activeAccount.transactions.filter(t => t.type === "WITHDRAWAL");
+            }
+
+            if (filtered.length === 0) {
+                list.innerHTML = `
+                    <div class="bg-slate-900 border border-slate-800 rounded-3xl p-12 text-center text-slate-400">
+                        <i class="fa-solid fa-receipt text-3xl mb-2 text-slate-600"></i>
+                        <p class="font-bold text-white">No ${passbookFilter.toLowerCase()} transactions found</p>
+                        <p class="text-xs text-slate-500 mt-1">Transactions will show up here immediately once performed.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            filtered.forEach(t => {
+                const isDeposit = t.type === "DEPOSIT";
+                const card = document.createElement("div");
+                card.className = "bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs hover:border-slate-700 transition";
+                card.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-2xl flex items-center justify-center font-bold text-base ${isDeposit ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}">
+                            <i class="fa-solid ${isDeposit ? 'fa-arrow-down-left' : 'fa-arrow-up-right'}"></i>
+                        </div>
+                        <div>
+                            <div class="flex items-center space-x-2">
+                                <h4 class="font-bold text-white text-sm">${t.desc}</h4>
+                                <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${isDeposit ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'}">
+                                    ${isDeposit ? 'Money In (Deposit)' : 'Money Out (Withdrawal)'}
+                                </span>
+                            </div>
+                            <div class="text-[11px] text-slate-400 font-mono-code mt-0.5">
+                                Ref: <strong>${t.utr}</strong> • ${t.timestamp} • Via ${t.channel}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center space-x-4 self-end sm:self-auto">
+                        <div class="text-right">
+                            <div class="text-base font-black ${isDeposit ? 'text-emerald-400' : 'text-rose-400'}">
+                                ${isDeposit ? '+' : '-'}₹${t.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                            </div>
+                            <div class="text-[10px] text-slate-500 font-mono-code">Balance After: ₹${t.closingBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</div>
+                        </div>
+                        <button onclick='openReceiptModal(${JSON.stringify(t).replace(/'/g, "&apos;")})' class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition" title="View Transaction Advice">
+                            <i class="fa-solid fa-receipt text-xs"></i>
+                        </button>
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+        }
+
+        // --- CASH DEPOSIT (Requirement #2) ---
+        function openDepositModal() {
+            document.getElementById("depositAmountInput").value = "";
+            document.getElementById("depositModal").classList.remove("hidden");
+        }
+
+        function closeDepositModal() {
+            document.getElementById("depositModal").classList.add("hidden");
+        }
+
+        function setDepositAmount(val) {
+            document.getElementById("depositAmountInput").value = val;
+        }
+
+        function executeDeposit() {
+            const amt = parseFloat(document.getElementById("depositAmountInput").value);
+            if (!amt || amt <= 0) {
+                showToast("Please enter a valid deposit amount.", "error");
+                return;
+            }
+            const channel = document.getElementById("depositChannelSelect").value;
+
+            try {
+                const txn = activeAccount.deposit(amt, `Cash Deposit (${channel})`, channel);
+                closeDepositModal();
+                showToast(`Deposited ₹${amt.toLocaleString()} successfully! New Bal: ₹${activeAccount.balance.toLocaleString()}`, "success");
+                refreshUI();
+                openReceiptModal(txn);
+            } catch (err) {
+                showToast(err.message, "error");
+            }
+        }
+
+        // --- CASH WITHDRAWAL (Requirement #2) ---
+        function openWithdrawModal() {
+            document.getElementById("withdrawAmountInput").value = "";
+            document.getElementById("withdrawPinInput").value = "";
+            document.getElementById("withdrawModal").classList.remove("hidden");
+        }
+
+        function closeWithdrawModal() {
+            document.getElementById("withdrawModal").classList.add("hidden");
+        }
+
+        function executeWithdrawal() {
+            const amt = parseFloat(document.getElementById("withdrawAmountInput").value);
+            const pin = document.getElementById("withdrawPinInput").value.trim();
+
+            if (!amt || amt <= 0) {
+                showToast("Please enter a valid withdrawal amount.", "error");
+                return;
+            }
+            if (!pin) {
+                showToast("Please enter your 4-digit ATM PIN.", "error");
+                return;
+            }
+
+            try {
+                const txn = activeAccount.withdraw(amt, pin, "ATM Cash Dispense");
+                closeWithdrawModal();
+                showToast(`Withdrew ₹${amt.toLocaleString()} successfully! Please collect cash.`, "success");
+                refreshUI();
+                openReceiptModal(txn);
+            } catch (err) {
+                showToast(err.message, "error");
+                refreshUI();
+            }
+        }
+
+        // --- TRANSFER FUNDS / SEND MONEY (Requirement #2) ---
+        function openTransferModal() {
+            switchTab('transfer');
+        }
+
+        function toggleTransferInputType() {
+            const method = document.querySelector('input[name="transferMethod"]:checked').value;
+            const label = document.getElementById("beneficiaryInputLabel");
+            const input = document.getElementById("transferBeneficiaryInput");
+            if (method === "UPI") {
+                label.innerText = "Beneficiary UPI Virtual ID *";
+                input.placeholder = "e.g. techcorp@javabank or aarav@javabank";
+            } else {
+                label.innerText = "Beneficiary Account Number *";
+                input.placeholder = "e.g. ACC1002 (Tech Innovations Ltd)";
+            }
+        }
+
+        function setQuickRecipient(upi) {
+            document.getElementById("transferBeneficiaryInput").value = upi;
+        }
+
+        function addTransferAmount(addVal) {
+            const input = document.getElementById("transferAmountInput");
+            const current = parseFloat(input.value) || 0;
+            input.value = current + addVal;
+        }
+
+        function promptTransferPin() {
+            const to = document.getElementById("transferBeneficiaryInput").value.trim();
+            const amt = parseFloat(document.getElementById("transferAmountInput").value);
+
+            if (!to) {
+                showToast("Please enter beneficiary UPI ID or Account Number", "error");
+                return;
+            }
+            if (!amt || amt <= 0) {
+                showToast("Please enter a valid transfer amount", "error");
+                return;
+            }
+
+            pendingPinAction = "TRANSFER";
+            document.getElementById("pinModalTitle").innerText = `Authorize Transfer of ₹${amt.toLocaleString()}`;
+            document.getElementById("pinModalSub").innerText = `Sending to ${to}`;
+            document.getElementById("securityPinInput").value = "";
+            document.getElementById("pinModal").classList.remove("hidden");
+        }
+
+        // Check Balance with PIN Modal (Requirement #2)
+        function openCheckBalancePinModal() {
+            pendingPinAction = "CHECK_BALANCE";
+            document.getElementById("pinModalTitle").innerText = "Verify Security PIN to Check Balance";
+            document.getElementById("pinModalSub").innerText = `Checking balance for ${activeAccount.accountNumber}`;
+            document.getElementById("securityPinInput").value = "";
+            document.getElementById("pinModal").classList.remove("hidden");
+        }
+
+        function closePinModal() {
+            document.getElementById("pinModal").classList.add("hidden");
+            pendingPinAction = null;
+        }
+
+        function validateAndExecutePinAction() {
+            const enteredPin = document.getElementById("securityPinInput").value.trim();
+            if (!enteredPin) {
+                showToast("Please enter 4-digit PIN", "error");
+                return;
+            }
+
+            if (pendingPinAction === "CHECK_BALANCE") {
+                if (enteredPin !== activeAccount.pin) {
+                    activeAccount.failedPinAttempts++;
+                    if (activeAccount.failedPinAttempts >= 3) {
+                        activeAccount.status = "LOCKED";
+                        closePinModal();
+                        showToast("SECURITY_ALERT: 3 failed PIN attempts. Account FROZEN!", "error");
+                        refreshUI();
+                        return;
+                    }
+                    showToast(`Incorrect PIN! Warning: Attempt ${activeAccount.failedPinAttempts} of 3.`, "error");
+                    return;
+                }
+                activeAccount.failedPinAttempts = 0;
+                isBalanceHidden = false;
+                closePinModal();
+                showToast(`Verified! Current Balance: ₹${activeAccount.balance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`, "success");
+                refreshUI();
+            } else if (pendingPinAction === "TRANSFER") {
+                const to = document.getElementById("transferBeneficiaryInput").value.trim();
+                const amt = parseFloat(document.getElementById("transferAmountInput").value);
+                const remarks = document.getElementById("transferRemarksInput").value.trim() || "Online UPI Transfer";
+
+                try {
+                    const txn = activeAccount.transfer(amt, to, enteredPin, remarks);
+                    closePinModal();
+                    showToast(`Successfully transferred ₹${amt.toLocaleString()} to ${to}!`, "success");
+                    document.getElementById("transferAmountInput").value = "";
+                    document.getElementById("transferRemarksInput").value = "";
+                    refreshUI();
+                    openReceiptModal(txn);
+                } catch (err) {
+                    showToast(err.message, "error");
+                    refreshUI();
+                }
+            }
+        }
+
+        // --- RECEIPT ADVICE MODAL (Requirement #2 & #3) ---
+        function openReceiptModal(txn) {
+            document.getElementById("receiptTimestamp").innerText = txn.timestamp;
+            document.getElementById("receiptUtr").innerText = txn.utr;
+            document.getElementById("receiptType").innerText = txn.channel;
+            document.getElementById("receiptFrom").innerText = `${activeAccount.accountNumber} (${activeAccount.holderName})`;
+            document.getElementById("receiptTo").innerText = txn.beneficiary;
+            document.getElementById("receiptDesc").innerText = txn.desc;
+            document.getElementById("receiptAmount").innerText = `₹${txn.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+
+            document.getElementById("receiptModal").classList.remove("hidden");
+        }
+
+        function closeReceiptModal() {
+            document.getElementById("receiptModal").classList.add("hidden");
+        }
+
+        // --- QR MODAL ---
+        function openReceiveQrModal() {
+            document.getElementById("receiveQrModal").classList.remove("hidden");
+        }
+
+        function closeReceiveQrModal() {
+            document.getElementById("receiveQrModal").classList.add("hidden");
+        }
+
+        // --- TREASURY & ADMIN STATION ---
+        function renderTreasuryStats() {
+            const totalDep = Object.values(BANK_ACCOUNTS).reduce((sum, a) => sum + a.balance, 0);
+            const totalOps = Object.values(BANK_ACCOUNTS).reduce((sum, a) => sum + a.transactions.length, 0);
+            const savingsBal = BANK_ACCOUNTS["ACC1001"].balance;
+
+            document.getElementById("treasuryTotalDeposits").innerText = `₹${totalDep.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+            document.getElementById("treasuryTxnCount").innerText = `${totalOps} Ops`;
+            document.getElementById("treasurySavingsRatio").innerText = `${((savingsBal / (totalDep || 1)) * 100).toFixed(1)}%`;
+
+            // Security Roster Table
+            const container = document.getElementById("adminAccountStatusList");
+            container.innerHTML = "";
+            Object.values(BANK_ACCOUNTS).forEach(acc => {
+                const div = document.createElement("div");
+                div.className = "p-3 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-between";
+                div.innerHTML = `
+                    <div>
+                        <div class="font-bold text-white">${acc.accountNumber}: ${acc.holderName} (${acc.type})</div>
+                        <div class="text-[11px] text-slate-400">Balance: ₹${acc.balance.toLocaleString()} • Failed PINs: ${acc.failedPinAttempts}/3 • Status: <strong class="${acc.status === 'ACTIVE' ? 'text-emerald-400' : 'text-rose-400'}">${acc.status}</strong></div>
+                    </div>
+                    <div>
+                        ${acc.status === 'LOCKED' ? `
+                            <button onclick="unfreezeAccount('${acc.accountNumber}')" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-xs">
+                                Unfreeze Account
+                            </button>
+                        ` : `
+                            <button onclick="freezeAccount('${acc.accountNumber}')" class="px-3 py-1 bg-rose-600/30 hover:bg-rose-600 text-rose-300 font-bold rounded-lg text-xs">
+                                Freeze
+                            </button>
+                        `}
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function unfreezeAccount(accNo) {
+            if (BANK_ACCOUNTS[accNo]) {
+                BANK_ACCOUNTS[accNo].status = "ACTIVE";
+                BANK_ACCOUNTS[accNo].failedPinAttempts = 0;
+                showToast(`Account ${accNo} successfully unfrozen by branch manager.`, "success");
+                refreshUI();
+            }
+        }
+
+        function freezeAccount(accNo) {
+            if (BANK_ACCOUNTS[accNo]) {
+                BANK_ACCOUNTS[accNo].status = "LOCKED";
+                showToast(`Account ${accNo} manually frozen by branch manager.`, "error");
+                refreshUI();
+            }
+        }
+
+        function calculateAndApplyMonthlyInterest() {
+            // Applies 4% annual interest compounded monthly on Savings Accounts
+            const savings = BANK_ACCOUNTS["ACC1001"];
+            const monthlyRate = 0.04 / 12;
+            const interest = parseFloat((savings.balance * monthlyRate).toFixed(2));
+            savings.balance += interest;
+            savings.transactions.unshift({
+                id: "TXN-" + Math.random().toString(36).substring(2, 8).toUpperCase(),
+                utr: "UTR-INT-" + Math.floor(Math.random() * 900000 + 100000),
+                type: "DEPOSIT",
+                amount: interest,
+                channel: "Core Interest Switch",
+                desc: "Monthly Compound Interest (4% p.a.)",
+                beneficiary: "Self (Interest Credit)",
+                closingBalance: savings.balance,
+                timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19)
+            });
+
+            showToast(`Applied ₹${interest.toFixed(2)} monthly interest to ACC1001!`, "success");
+            refreshUI();
+        }
+
+        // --- NAVIGATION SWITCHER ---
+        function switchTab(tab) {
+            document.getElementById("sectionDashboard").classList.add("hidden");
+            document.getElementById("sectionPassbook").classList.add("hidden");
+            document.getElementById("sectionTransfer").classList.add("hidden");
+            document.getElementById("sectionAdmin").classList.add("hidden");
+
+            const defBtn = "px-3.5 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-white transition flex items-center space-x-1.5";
+            const actBtn = "px-3.5 py-2 rounded-xl text-xs font-bold bg-rose-600 text-white transition flex items-center space-x-1.5 shadow-md shadow-rose-600/20";
+
+            document.getElementById("navBtnDashboard").className = defBtn;
+            document.getElementById("navBtnPassbook").className = defBtn;
+            document.getElementById("navBtnTransfer").className = defBtn;
+            document.getElementById("navBtnAdmin").className = defBtn;
+
+            if (tab === 'dashboard') {
+                document.getElementById("sectionDashboard").classList.remove("hidden");
+                document.getElementById("navBtnDashboard").className = actBtn;
+            } else if (tab === 'passbook') {
+                document.getElementById("sectionPassbook").classList.remove("hidden");
+                document.getElementById("navBtnPassbook").className = actBtn;
+            } else if (tab === 'transfer') {
+                document.getElementById("sectionTransfer").classList.remove("hidden");
+                document.getElementById("navBtnTransfer").className = actBtn;
+            } else if (tab === 'admin') {
+                document.getElementById("sectionAdmin").classList.remove("hidden");
+                document.getElementById("navBtnAdmin").className = actBtn;
+            }
+        }
+
+        // Generic Toast helper
+        function showToast(msg, type = "success") {
+            const toast = document.getElementById("toastAlert");
+            const text = document.getElementById("toastMsg");
+            const icon = document.getElementById("toastIcon");
+
+            text.innerText = msg;
+            if (type === "success") {
+                icon.className = "fa-solid fa-circle-check text-emerald-400 text-base";
+            } else if (type === "error") {
+                icon.className = "fa-solid fa-circle-exclamation text-rose-400 text-base";
+            } else {
+                icon.className = "fa-solid fa-circle-info text-cyan-400 text-base";
+            }
+
+            toast.classList.remove("hidden");
+            setTimeout(() => toast.classList.add("hidden"), 4000);
+        }
+
+        // Initialize on load
+        refreshUI();
+    </script>
+</body>
+</html>
